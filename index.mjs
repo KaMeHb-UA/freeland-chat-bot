@@ -57,6 +57,31 @@ const warnMessageCount = createLinkedObject('warnings');
 const firstMessageTime = createLinkedObject('first_message_time');
 /** @type {{[id: number]: number}} */
 const restrictions = createLinkedObject('restrictions');
+/** @type {{[id: number]: {[warner: number]: boolean}}} */
+const warnMap = (collectionName => {
+    const proxy = new Proxy(Object.create(null), {
+        get(_, id){
+            if(!(id in _)) _[id] = new Proxy(Object.create(null), {
+                get(__, warner){
+                    return !!__[warner]
+                },
+                set(__, warner, value){
+                    __[warner] = !!value;
+                    firestore.collection(collectionName).doc(id).set(__);
+                    return true
+                },
+            });
+            return _[id]
+        },
+        set(_, id, value){
+            return false
+        },
+    });
+    firestore.collection(collectionName).onSnapshot(snap => {
+        for(const doc of snap.docs) Object.assign(proxy[doc.id], doc.data())
+    });
+    return proxy
+})('warn_map');
 
 async function deleteMessage(ctx){
     await Promise.all([
@@ -96,12 +121,13 @@ bot.on('edited_message', (ctx, next) => {
 });
 
 bot.command('warn', (ctx, next) => {
-    if(warnMessageCount[id] === 3) return next();
     const { id } = ctx.message.reply_to_message.from;
+    if(warnMessageCount[id] === 3 || warnMap[id][ctx.message.from.id]) return next();
     if(id === botId){
         ctx.replyWithMarkdown(`[${ctx.from.first_name}](tg://user?id=${ctx.from.id}), я щас тебя забаню`);
         return next()
     }
+    warnMap[id][ctx.message.from.id] = true;
     if(!(id in warnMessageCount)) warnMessageCount[id] = 1;
     else warnMessageCount[id]++;
     if(warnMessageCount[id] === 3){
