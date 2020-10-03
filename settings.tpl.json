@@ -1,4 +1,9 @@
 {
     "chatId": -1001372417261,
-    "bot_token": ""
+    "bot_token": "",
+    "firebase": {
+        "credential": {
+        },
+        "databaseURL": ""
+    }
 }

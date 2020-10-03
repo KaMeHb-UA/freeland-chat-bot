@@ -4,6 +4,7 @@
         "start": "node --experimental-json-modules index.mjs"
     },
     "dependencies": {
+        "firebase-admin": "^9.2.0",
         "telegraf": "^3.38.0"
     }
 }
