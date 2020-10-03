@@ -1,0 +1,9 @@
+{
+    "name": "freeland-chat-bot",
+    "scripts": {
+        "start": "node --experimental-json-modules index.mjs"
+    },
+    "dependencies": {
+        "telegraf": "^3.38.0"
+    }
+}
