@@ -9,6 +9,14 @@ const firestore = firebase.initializeApp({
     databaseURL: settings.firebase.databaseURL,
 }).firestore();
 
+const allowedLinks = [
+    /^(https?:\/\/)?(.+\.)?mfcoin\.net(\/.*)?$/,
+    /^(https?:\/\/)?(www\.)?t\.me\/mfcoin(ru|en)(\/.*)?$/,
+    /^(https?:\/\/)?(www\.)?facebook\.com\/groups\/mfcoin(\/.*)?$/,
+    /^(https?:\/\/)?vk\.com\/mfcoin(\/.*)?$/,
+    /^(https?:\/\/)?bitcointalk\.org\/index\.php\?topic=(3302663|3098405)(&.*)?$/
+];
+
 const restrictUser = {
     can_send_messages: false,
     can_send_media_messages: false,
