@@ -40,6 +40,10 @@ const rules = {
         'text_link',
         'text_mention',
     ],
+    allowedEntities: {
+        url: [ allowedLinks, (e, ctx) => ctx.message.text.slice(e.offset, e.offset + e.length) ],
+        text_link: [ allowedLinks, e => e.url ],
+    },
     forbiddenTypes: [
         'photo',
     ],
@@ -118,12 +122,22 @@ async function deleteMessage(ctx){
 function check(ctx, message, doDeleteMessage = true){
     if(!(ctx.from.id in userMessageCount)) userMessageCount[ctx.from.id] = 0;
     if(
-        ctx.message.date - firstMessageTime[ctx.from.id] < rules.minTimeCount
+        message.date - firstMessageTime[ctx.from.id] < rules.minTimeCount
      || userMessageCount[ctx.from.id] < rules.minMessageCount
     ){
         if(message.entities) for(const entity of message.entities) if(rules.forbiddenEntities.includes(entity.type)){
-            if(doDeleteMessage) deleteMessage(ctx)
-            return false
+            if(entity.type in rules.allowedEntities){
+                const [ allowed, valueGetter ] = rules.allowedEntities[entity.type];
+                const entityValue = valueGetter(entity, ctx);
+                const isValueAllowed = allowed.map(v => v.test(entityValue)).reduce((prev, curr) => prev || curr);
+                if(!isValueAllowed){
+                    if(doDeleteMessage) deleteMessage(ctx)
+                    return false
+                }
+            } else {
+                if(doDeleteMessage) deleteMessage(ctx)
+                return false
+            }
         }
         for(const type of rules.forbiddenTypes) if(message[type]){
             if(doDeleteMessage) deleteMessage(ctx)
@@ -147,8 +161,8 @@ bot.on('edited_message', (ctx, next) => {
 });
 
 bot.command('warn', (ctx, next) => {
-    const { id } = ctx.message.reply_to_message.from;
-    if(warnMessageCount[id] === 3 || warnMap[id][ctx.message.from.id]) return next();
+    const id = ctx.message.reply_to_message?.from?.id;
+    if(!id || warnMessageCount[id] === 3 || warnMap[id][ctx.message.from.id]) return next();
     if(id === botId){
         ctx.replyWithMarkdown(`[${ctx.from.first_name}](tg://user?id=${ctx.from.id}), я щас тебя забаню`);
         return next()
@@ -168,8 +182,8 @@ bot.command('warn', (ctx, next) => {
 });
 
 bot.command('unwarn', (ctx, next) => {
-    const { id } = ctx.message.reply_to_message.from;
-    if(warnMessageCount[id] === 0 || unwarnMap[id][ctx.message.from.id]) return next();
+    const id = ctx.message.reply_to_message?.from?.id;
+    if(!id || warnMessageCount[id] === 0 || unwarnMap[id][ctx.message.from.id]) return next();
     if(id === botId){
         ctx.replyWithMarkdown(`[${ctx.from.first_name}](tg://user?id=${ctx.from.id}), спасибо, но мне и так хорошо`);
         return next()
