@@ -9,6 +9,20 @@ const firestore = firebase.initializeApp({
     databaseURL: settings.firebase.databaseURL,
 }).firestore();
 
+const restrictUser = {
+    can_send_messages: false,
+    can_send_media_messages: false,
+    can_send_polls: false,
+    can_send_other_messages: false,
+    can_add_web_page_previews: false,
+    can_change_info: false,
+    can_invite_users: false,
+    can_pin_messages: false,
+};
+/** @type { typeof restrictUser } */
+const unrestrictUser = {};
+for(const i in restrictUser) unrestrictUser[i] = !restrictUser[i];
+
 const day = 60 * 60 * 24;
 
 const rules = {
@@ -135,7 +149,7 @@ bot.command('warn', (ctx, next) => {
         if(!(id in restrictions)) restrictions[id] = 0;
         const restrictTime = rules.restrictionLevels[++restrictions[id]];
         ctx.restrictChatMember(id, {
-            permissions: {},
+            permissions: restrictUser,
             until_date: now + restrictTime,
         });
     }
