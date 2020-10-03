@@ -63,16 +63,8 @@ function createLinkedObject(collectionName){
     })
 }
 
-/** @type {{[id: number]: number}} */
-const userMessageCount = createLinkedObject('messages');
-/** @type {{[id: number]: number}} */
-const warnMessageCount = createLinkedObject('warnings');
-/** @type {{[id: number]: number}} */
-const firstMessageTime = createLinkedObject('first_message_time');
-/** @type {{[id: number]: number}} */
-const restrictions = createLinkedObject('restrictions');
-/** @type {{[id: number]: {[warner: number]: boolean}}} */
-const warnMap = (collectionName => {
+function createLinkedBooleanMap(collectionName){
+    /** @type {{[id: number]: {[x: number]: boolean}}} */
     const proxy = new Proxy(Object.create(null), {
         get(_, id){
             if(!(id in _)) _[id] = new Proxy(Object.create(null), {
@@ -95,7 +87,18 @@ const warnMap = (collectionName => {
         for(const doc of snap.docs) Object.assign(proxy[doc.id], doc.data())
     });
     return proxy
-})('warn_map');
+}
+
+/** @type {{[id: number]: number}} */
+const userMessageCount = createLinkedObject('messages');
+/** @type {{[id: number]: number}} */
+const warnMessageCount = createLinkedObject('warnings');
+/** @type {{[id: number]: number}} */
+const firstMessageTime = createLinkedObject('first_message_time');
+/** @type {{[id: number]: number}} */
+const restrictions = createLinkedObject('restrictions');
+const warnMap = createLinkedBooleanMap('warn_map');
+const unwarnMap = createLinkedBooleanMap('unwarn_map');
 
 async function deleteMessage(ctx){
     await Promise.all([
@@ -126,6 +129,7 @@ bot.on('message', (ctx, next) => {
     if(ctx.message.new_chat_members && ctx.message.new_chat_members.length) return next();
     if(!(ctx.from.id in firstMessageTime)) firstMessageTime[ctx.from.id] = ctx.message.date;
     if(check(ctx, ctx.message)) userMessageCount[ctx.from.id]++;
+    if(ctx.message.text === 'Гриш, тебе насрать?') ctx.reply('Да, абсолютно');
     return next()
 });
 
@@ -151,6 +155,24 @@ bot.command('warn', (ctx, next) => {
         ctx.restrictChatMember(id, {
             permissions: restrictUser,
             until_date: now + restrictTime,
+        });
+    }
+});
+
+bot.command('unwarn', (ctx, next) => {
+    const { id } = ctx.message.reply_to_message.from;
+    if(warnMessageCount[id] === 0 || unwarnMap[id][ctx.message.from.id]) return next();
+    if(id === botId){
+        ctx.replyWithMarkdown(`[${ctx.from.first_name}](tg://user?id=${ctx.from.id}), спасибо, но мне и так хорошо`);
+        return next()
+    }
+    unwarnMap[id][ctx.message.from.id] = true;
+    if(!(id in warnMessageCount)) warnMessageCount[id] = 0;
+    else warnMessageCount[id]--;
+    if(warnMessageCount[id] === 0){
+        if(!(id in restrictions)) restrictions[id] = 0;
+        ctx.restrictChatMember(id, {
+            permissions: unrestrictUser,
         });
     }
 });
