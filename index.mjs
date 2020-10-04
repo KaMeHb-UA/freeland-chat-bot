@@ -152,7 +152,6 @@ bot.on('message', (ctx, next) => {
     if(ctx.message.new_chat_members && ctx.message.new_chat_members.length) return next();
     if(!(ctx.from.id in firstMessageTime)) firstMessageTime[ctx.from.id] = ctx.message.date;
     if(check(ctx, ctx.message)) userMessageCount[ctx.from.id]++;
-    if(ctx.message.text === 'Гриш, тебе насрать?') ctx.reply('Да, абсолютно');
     return next()
 });
 
@@ -166,10 +165,7 @@ bot.command('warn', (ctx, next) => {
     if(ctx.chat.id !== settings.chatId) return next();
     const id = ctx.message.reply_to_message?.from?.id;
     if(!id || warnMessageCount[id] === 3 || warnMap[id][ctx.message.from.id]) return next();
-    if(id === botId){
-        ctx.replyWithMarkdown(`[${ctx.from.first_name}](tg://user?id=${ctx.from.id}), я щас тебя забаню`);
-        return next()
-    }
+    if(id === botId) return next();
     warnMap[id][ctx.message.from.id] = true;
     if(!(id in warnMessageCount)) warnMessageCount[id] = 1;
     else warnMessageCount[id]++;
@@ -181,6 +177,7 @@ bot.command('warn', (ctx, next) => {
             permissions: restrictUser,
             until_date: now + restrictTime,
         });
+        ctx.replyWithMarkdown(`[${ctx.message.reply_to_message.from.first_name}](tg://user?id=${id}), Вы были заблокированы решением комьюнити`)
     }
 });
 
@@ -188,10 +185,7 @@ bot.command('unwarn', (ctx, next) => {
     if(ctx.chat.id !== settings.chatId) return next();
     const id = ctx.message.reply_to_message?.from?.id;
     if(!id || warnMessageCount[id] === 0 || unwarnMap[id][ctx.message.from.id]) return next();
-    if(id === botId){
-        ctx.replyWithMarkdown(`[${ctx.from.first_name}](tg://user?id=${ctx.from.id}), спасибо, но мне и так хорошо`);
-        return next()
-    }
+    if(id === botId) return next();
     unwarnMap[id][ctx.message.from.id] = true;
     if(!(id in warnMessageCount)) warnMessageCount[id] = 0;
     else warnMessageCount[id]--;
@@ -200,6 +194,7 @@ bot.command('unwarn', (ctx, next) => {
         ctx.restrictChatMember(id, {
             permissions: unrestrictUser,
         });
+        ctx.replyWithMarkdown(`[${ctx.message.reply_to_message.from.first_name}](tg://user?id=${id}), поздравляем, Вы снова можете писать в чат, все ограничения были сняты`)
     }
 });
 
