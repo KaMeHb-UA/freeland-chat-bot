@@ -14,7 +14,8 @@ const allowedLinks = [
     /^(https?:\/\/)?(www\.)?t\.me\/mfcoin(ru|en)(\/.*)?$/,
     /^(https?:\/\/)?(www\.)?facebook\.com\/groups\/mfcoin(\/.*)?$/,
     /^(https?:\/\/)?vk\.com\/mfcoin(\/.*)?$/,
-    /^(https?:\/\/)?bitcointalk\.org\/index\.php\?topic=(3302663|3098405)(&.*)?$/
+    /^(https?:\/\/)?bitcointalk\.org\/index\.php\?topic=(3302663|3098405)(&.*)?$/,
+    /^(https?:\/\/)?telegra\.ph\/(Pravila-of-chata-Freelanda-07-23|Poleznaya-informaciya-i-ssylki-10-02)(#.*|\/)?$/,
 ];
 
 const restrictUser = {
