@@ -1,7 +1,8 @@
 {
     "name": "freeland-chat-bot",
     "scripts": {
-        "start": "node --experimental-json-modules index.mjs"
+        "start": "node --experimental-json-modules index.mjs",
+        "start-nvm": "nvm-exec yarn start"
     },
     "dependencies": {
         "firebase-admin": "^9.2.0",
