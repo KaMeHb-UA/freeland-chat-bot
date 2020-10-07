@@ -60,6 +60,10 @@ const rules = {
     }
 };
 
+function isGroup(ctx){
+    return settings.chats.includes(ctx.chat.id)
+}
+
 function createLinkedObject(collectionName){
     const _ = Object.create(null);
     firestore.collection(collectionName).onSnapshot(snap => {
@@ -150,7 +154,7 @@ function check(ctx, message, doDeleteMessage = true){
 }
 
 bot.on('message', (ctx, next) => {
-    if(ctx.chat.id !== settings.chatId) return next();
+    if(!isGroup(ctx)) return next();
     if(ctx.message.new_chat_members && ctx.message.new_chat_members.length) return next();
     if(!(ctx.from.id in firstMessageTime)) firstMessageTime[ctx.from.id] = ctx.message.date;
     if(check(ctx, ctx.message)) userMessageCount[ctx.from.id]++;
@@ -158,13 +162,13 @@ bot.on('message', (ctx, next) => {
 });
 
 bot.on('edited_message', (ctx, next) => {
-    if(ctx.chat.id !== settings.chatId) return next();
+    if(!isGroup(ctx)) return next();
     check(ctx, ctx.update.edited_message);
     return next()
 });
 
-bot.command('warn', (ctx, next) => {
-    if(ctx.chat.id !== settings.chatId) return next();
+bot.command(['/warn', '/warn@mfcoinru_chatbot'], (ctx, next) => {
+    if(!isGroup(ctx)) return next();
     const id = ctx.message.reply_to_message?.from?.id;
     if(!id || warnMessageCount[id] === 3 || warnMap[id][ctx.message.from.id]) return next();
     if(id === botId) return next();
@@ -183,8 +187,8 @@ bot.command('warn', (ctx, next) => {
     }
 });
 
-bot.command('unwarn', (ctx, next) => {
-    if(ctx.chat.id !== settings.chatId) return next();
+bot.command(['/unwarn', '/unwarn@mfcoinru_chatbot'], (ctx, next) => {
+    if(!isGroup(ctx)) return next();
     const id = ctx.message.reply_to_message?.from?.id;
     if(!id || warnMessageCount[id] === 0 || unwarnMap[id][ctx.message.from.id]) return next();
     if(id === botId) return next();
@@ -192,7 +196,8 @@ bot.command('unwarn', (ctx, next) => {
     if(!(id in warnMessageCount)) warnMessageCount[id] = 0;
     else warnMessageCount[id]--;
     if(warnMessageCount[id] === 0){
-        if(!(id in restrictions)) restrictions[id] = 0;
+        if(!(id in restrictions)) restrictions[id] = 1;
+        --restrictions[id];
         ctx.restrictChatMember(id, {
             permissions: unrestrictUser,
         });
